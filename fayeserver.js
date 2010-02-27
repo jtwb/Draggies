@@ -3,7 +3,31 @@ var sys = require('sys'),
     fs = require('fs'),
     faye = require('./faye');
 
-var comet = new faye.NodeAdapter({mount: '/fayeclient', timeout: 45});
+var comet = new faye.NodeAdapter({mount: '/fayeclient', timeout: 45}),
+    client = comet.getClient();
+
+// setup sync client; TODO move into a separate module
+var state = {};
+client.subscribe('/general', function(message) {
+// TODO discard malformed messages
+   message.client && message.type || return;
+   sys.puts('sync noticed message from client ' + message.client);
+   sys.puts('message type == ' + message.type);
+   switch (message.type) {
+      case 'place' :
+         state[message.el] = {
+            x: message.x,
+            y: message.y
+         };
+         break;
+      case 'delete' :
+         delete state[message.el];
+         break;
+   }
+});
+//client.subscribe('/sync', function(message) {
+//   sys.puts('sync request recieved from client ' + message.client);
+//});
 
 var port = 8010;
 
@@ -14,11 +38,15 @@ http.createServer(function(req, resp) {
    if (comet.call(req, resp)) {
       sys.puts('** Handled by faye');
       return;
-   } else {
-      sys.puts('** Handled by server');
    }
 
   var path = (req.url === '/') ? '/index.html' : req.url;
+  if (path === '/sync') {
+      sys.puts('** Handled by syncserver');
+      // TODO emit state as JSON
+      return;
+  }
+  sys.puts('** Handled by file server');
   fs.readFile('./static/' + path).addCallback(function(content) {
     resp.sendHeader(200, {'Content-Type': 'text/html'});
     resp.write(content);
