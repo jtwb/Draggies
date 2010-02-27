@@ -1,9 +1,23 @@
 if (typeof console == "undefined") { console = {log: function(m){}} };
 
-var Remote = function(clientId, publish) {
-   this.publish = publish;
+var Remote = function(fayeclient, clientId) {
+   var fayepath = '/general';
+
+   this.publish = function(message){
+      return fayeclient.publish(fayepath, message);
+   };
+
    this.clientId = clientId;
-   this.listeners = {};
+
+   fayeclient.subscribe(fayepath, function(message) {
+      console.log('message recieved');
+      console.log(message);
+      if (message.client == clientId) {
+         console.log('loopback; ignore');
+         return;
+      }
+      $('body').trigger('dg-message', message);
+   });
 
    $('body').bind('dg-message', function(e, args) {
       args.type && $('body').trigger('dg-' + args.type, args);
@@ -16,23 +30,17 @@ Remote.prototype = {
       var data = { client: this.clientId, type: eventType };
       switch (eventType) {
          case 'place':
-            data.el = parameters.id;
+            data.el = parameters.el;
             data.x = parameters.pos.left;
             data.y = parameters.pos.top;
             break;
          case 'delete':
-            data.el = parameters.id;
+            data.el = parameters.el;
             break;
       }
       console.log('sending data');
       console.log(data);
       this.publish(data);
-   },
-   subscribe: function(eventType, callback) {
-      if (typeof this.listeners[eventType] == 'undefined') {
-         this.listeners[eventType] = [];
-      }
-      
    }
 };
 $(function(){
@@ -58,21 +66,15 @@ $(function(){
       console.log(message.el);
    });
 
-   var fayepath = '/general',
-       fayeclient = null,
-       clientId = getNewId(),
-       fayecb = function(message) {
-         console.log('message recieved');
-         console.log(message);
-         if (message.client == clientId) {
-            console.log('loopback; ignore');
-            return;
-         }
-         $('body').trigger('dg-message', message);
-       },
-       remote = new Remote(clientId, function(message){
-         return fayeclient.publish(fayepath, message); }
-       ),
+   $('body').bind('dg-delete', function(e, message) {
+      console.log('deletion handler');
+      console.log(message);
+      $('#'+message.el).remove();
+   });
+
+   var clientId = getNewId(),
+       fayeclient = new Faye.Client('/fayeclient'),
+       remote = new Remote(fayeclient, clientId),
        newBox = function(pos, id) {
          var boxHtml = '<div class="dg-box"></div>';
          return $(boxHtml).appendTo($('#dg-boxstart'))
@@ -87,8 +89,9 @@ $(function(){
             containment: 'window',
             grid: [51, 51],
             stop: function(event, ui){
+               if (ui.helper.hasClass('dg-dead')) return;
                remote.fire('place', {
-                  id: ui.helper.attr('id'), 
+                  el: ui.helper.attr('id'), 
                   pos: ui.position,
                });
             }
@@ -101,7 +104,7 @@ $(function(){
                var newId = 'dg-box-' + getNewId();
                newBox(ui.position, newId);
                remote.fire('place', {
-                  id: newId,
+                  el: newId,
                   pos: ui.position
                });
             }
@@ -114,7 +117,9 @@ $(function(){
 
    $(".dg-trash").droppable({
       drop: function(event, ui){
-         ui.draggable.hasClass('dg-target') || ui.draggable.remove();
+         if (ui.draggable.hasClass('dg-target')) return;
+         remote.fire('delete', { el: ui.draggable.attr('id')});
+         ui.draggable.addClass('dg-dead').remove();
       }
    });
 
@@ -133,8 +138,4 @@ $(function(){
       console.log(e.which);
       e.which == $.keyCode.ESCAPE && console.log('ESC triggered');
    });
-
-   // faye setup
-   fayeclient = new Faye.Client('/fayeclient');
-   fayeclient.subscribe(fayepath, fayecb);
 });
