@@ -1,5 +1,8 @@
+if (typeof console == "undefined") { console = {log: function(m){}} };
+
 $(function(){
    var getNewId = function() {
+         // TODO overwrite with a hashing algorithm?
          return 'xxxxxxxx-xxxx'.replace(/[xy]/g, function(c) {
             var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
             return v.toString(16);
@@ -16,12 +19,15 @@ $(function(){
             console.log('loopback; ignore');
             //return;
          }
-         if ($('#'+message.el)[0])
-            $('#'+message.el);
+         if ($('#'+message.el)[0]) {
+            $('#'+message.el).css({
+               left: message.x,
+               top: message.y
+            });
          } else {
              newBox({left: message.x, top: message.y}, message.el);
          }
-         console.log(el);
+         console.log(message.el);
        },
        fayesend = function(pos, id) {
          var data = {
@@ -31,7 +37,7 @@ $(function(){
             y: pos.top
          };
          // placeholder
-         console.log('starting fayesync');
+         console.log('starting fayesend');
          console.log('sending data');
          console.log(data);
          fayeclient.publish(fayepath, data);
