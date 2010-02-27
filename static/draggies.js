@@ -3,13 +3,18 @@ if (typeof console == "undefined") { console = {log: function(m){}} };
 var Remote = function(clientId, publish) {
    this.publish = publish;
    this.clientId = clientId;
+   this.listeners = {};
+
+   $('body').bind('dg-message', function(e, args) {
+      args.type && $('body').trigger('dg-' + args.type, args);
+   });
 }
 
 Remote.prototype = {
-   fire: function(type, parameters) {
+   fire: function(eventType, parameters) {
       console.log('starting fayesend');
-      var data = { client: this.clientId, type: type };
-      switch (type) {
+      var data = { client: this.clientId, type: eventType };
+      switch (eventType) {
          case 'place':
             data.el = parameters.id;
             data.x = parameters.pos.left;
@@ -22,6 +27,12 @@ Remote.prototype = {
       console.log('sending data');
       console.log(data);
       this.publish(data);
+   },
+   subscribe: function(eventType, callback) {
+      if (typeof this.listeners[eventType] == 'undefined') {
+         this.listeners[eventType] = [];
+      }
+      
    }
 };
 $(function(){
@@ -33,6 +44,20 @@ $(function(){
          });
       };
 
+   $('body').bind('dg-place', function(e, message) {
+      console.log('place handler');
+      console.log(message);
+      if ($('#'+message.el)[0]) {
+         $('#'+message.el).css({
+            left: message.x,
+            top: message.y
+         });
+      } else {
+          newBox({left: message.x, top: message.y}, message.el);
+      }
+      console.log(message.el);
+   });
+
    var fayepath = '/general',
        fayeclient = null,
        clientId = getNewId(),
@@ -43,15 +68,7 @@ $(function(){
             console.log('loopback; ignore');
             return;
          }
-         if ($('#'+message.el)[0]) {
-            $('#'+message.el).css({
-               left: message.x,
-               top: message.y
-            });
-         } else {
-             newBox({left: message.x, top: message.y}, message.el);
-         }
-         console.log(message.el);
+         $('body').trigger('dg-message', message);
        },
        remote = new Remote(clientId, function(message){
          return fayeclient.publish(fayepath, message); }
