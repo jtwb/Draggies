@@ -1,0 +1,45 @@
+
+html, body {
+   background-color: #888;
+}
+
+.dg-banner {
+   border: 1px solid black;
+   border-left-width: 0;
+   border-right-width: 0;
+   background-color: white;
+   height: 120px;
+   position: relative;
+}
+
+.dg-target {
+   border: 2px solid black;
+   height: 100px;
+   width: 100px;
+   background-color: white;
+}
+
+.dg-spawn {
+   position: absolute;
+   top: 8px;
+   left: 8px;
+}
+
+.dg-trash {
+   position: absolute;
+   top: 8px;
+   right: 8px;
+   border-color: red;
+   color: red;
+}
+
+.dg-box {
+   height: 100px;
+   width: 100px;
+   background-color: white;
+   border: 1px solid black;
+   position: absolute;
+   top: 0;
+   left: 0;
+}
+
