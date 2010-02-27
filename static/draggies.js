@@ -1,5 +1,29 @@
 if (typeof console == "undefined") { console = {log: function(m){}} };
 
+var Remote = function(clientId, publish) {
+   this.publish = publish;
+   this.clientId = clientId;
+}
+
+Remote.prototype = {
+   fire: function(type, parameters) {
+      console.log('starting fayesend');
+      var data = { client: this.clientId, type: type };
+      switch (type) {
+         case 'place':
+            data.el = parameters.id;
+            data.x = parameters.pos.left;
+            data.y = parameters.pos.top;
+            break;
+         case 'delete':
+            data.el = parameters.id;
+            break;
+      }
+      console.log('sending data');
+      console.log(data);
+      this.publish(data);
+   }
+};
 $(function(){
    var getNewId = function() {
          // TODO overwrite with a hashing algorithm?
@@ -17,7 +41,7 @@ $(function(){
          console.log(message);
          if (message.client == clientId) {
             console.log('loopback; ignore');
-            //return;
+            return;
          }
          if ($('#'+message.el)[0]) {
             $('#'+message.el).css({
@@ -29,19 +53,9 @@ $(function(){
          }
          console.log(message.el);
        },
-       fayesend = function(pos, id) {
-         var data = {
-            client: clientId,
-            el: id,
-            x: pos.left,
-            y: pos.top
-         };
-         // placeholder
-         console.log('starting fayesend');
-         console.log('sending data');
-         console.log(data);
-         fayeclient.publish(fayepath, data);
-      },
+       remote = new Remote(clientId, function(message){
+         return fayeclient.publish(fayepath, message); }
+       ),
        newBox = function(pos, id) {
          var boxHtml = '<div class="dg-box"></div>';
          return $(boxHtml).appendTo($('#dg-boxstart'))
@@ -56,7 +70,10 @@ $(function(){
             containment: 'window',
             grid: [51, 51],
             stop: function(event, ui){
-               fayesend(ui.position, ui.helper.attr('id'));
+               remote.fire('place', {
+                  id: ui.helper.attr('id'), 
+                  pos: ui.position,
+               });
             }
          },
          spawn: {
@@ -66,7 +83,10 @@ $(function(){
             stop: function(event, ui){
                var newId = 'dg-box-' + getNewId();
                newBox(ui.position, newId);
-               fayesend(ui.position, newId);
+               remote.fire('place', {
+                  id: newId,
+                  pos: ui.position
+               });
             }
          }
        };
