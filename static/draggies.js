@@ -28,16 +28,7 @@ Remote.prototype = {
    fire: function(eventType, parameters) {
       console.log('starting fayesend');
       var data = { client: this.clientId, type: eventType };
-      switch (eventType) {
-         case 'place':
-            data.el = parameters.el;
-            data.x = parameters.pos.left;
-            data.y = parameters.pos.top;
-            break;
-         case 'delete':
-            data.el = parameters.el;
-            break;
-      }
+      $.extend(data, parameters);
       console.log('sending data');
       console.log(data);
       this.publish(data);
@@ -67,6 +58,12 @@ $(function(){
       console.log(message.el);
    });
 
+   $('body').bind('dg-text', function(e, message) {
+      console.log('text handler');
+      console.log(message);
+      $('#'+message.el).html('<span class="dg-letter">'+message.text+'</span>');
+   });
+
    $('body').bind('dg-delete', function(e, message) {
       console.log('deletion handler');
       console.log(message);
@@ -81,8 +78,10 @@ $(function(){
           $(selected).removeClass('dg-selected');
           selected = el == null ? null : $(el).addClass('dg-selected');
        },
-       boxHtml = '<div class="dg-box"></div>',
-       newBox = function(id, pos) {
+       newBox = function(id, data) {
+         var boxHtml = data.text
+            ? '<div class="dg-box"><span class="dg-letter">'+data.text+'</div>'
+            : '<div class="dg-box"></div>';
          return $(boxHtml).appendTo($('#dg-boxstart'))
             .draggable({
                containment: 'window',
@@ -93,17 +92,18 @@ $(function(){
                   select(ui.helper);
                   remote.fire('place', {
                      el: ui.helper.attr('id'), 
-                     pos: ui.position,
+                     x: ui.position.left,
+                     y: ui.position.top
                   });
                }
             }).css({
-               top: pos.top || pos.y || pos[1],
-               left: pos.left || pos.x || pos[0]
+               top: data.top || data.y,
+               left: data.left || data.x
             }).attr('id', id)
             .click(function(e) {
                console.log('box click fired');
-               console.log(e.target);
-               select(e.target);
+               console.log(e.currentTarget);
+               select(e.currentTarget);
             });
       };
 
@@ -117,7 +117,8 @@ $(function(){
          select(box);
          remote.fire('place', {
             el: newId,
-            pos: ui.position
+            x: ui.position.left,
+            y: ui.position.top,
          });
       }
    });
@@ -131,27 +132,39 @@ $(function(){
    });
 
    // listen for deselect-click
-   $('html').click(function(e){
+   $('html').add('.dg-banner').click(function(e){
       e.preventDefault();
       // deselect any selected items
       if (e.target == this) {
-         console.log('html.click deselect');
+         console.log('click deselect');
          select(null);
       }
    });
 
    // listen for ESC (deselect)
-   // TODO why doesn't this work?
-   $('document').keypress(function(e){
-      console.log(e.which);
-      e.which == $.keyCode.ESCAPE && console.log('ESC triggered');
+   // TODO get this shit working
+   /*$(document).keypress(function(e){
+      console.log('keypress');
+      console.log(e);
+      e.charCode == 27 && console.log('ESC triggered');
+   });*/
+   $(document).keydown(function(e){
+      console.log('keydown');
+      console.log(e.keyCode);
+      var key = e.which || e.keyCode;
+      if (32 <= key && key <= 126) {
+         //set selected state to keyCode
+         var text = String.fromCharCode(key);
+         $(selected).html('<span class="dg-letter">' + text + '</div>');
+         remote.fire('text', { el: $(selected).attr('id'), text: text });
+      }
    });
 
    $.getJSON('/sync', function(data) {
       console.log('sync data recieved: ');
       console.log(data);
-      $.each(data, function(id, pos) {
-         newBox(id, pos);
+      $.each(data, function(id, data) {
+         newBox(id, data);
       });
    });
 });

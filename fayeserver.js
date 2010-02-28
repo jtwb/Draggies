@@ -16,10 +16,16 @@ client.subscribe('/general', function(message) {
    sys.puts('message type == ' + message.type);
    switch (message.type) {
       case 'place' :
-         state[message.el] = {
+         state[message.el] || (state[message.el] = {});
+         process.mixin(state[message.el], {
             x: message.x,
             y: message.y
-         };
+         });
+         break;
+      case 'text' :
+         process.mixin(state[message.el], {
+            text: message.text,
+         });
          break;
       case 'delete' :
          delete state[message.el];
@@ -29,7 +35,7 @@ client.subscribe('/general', function(message) {
    sys.puts(json.stringify(state));
 });
 
-var port = 8010;
+var port = 80;
 
 sys.puts('Listening on ' + port);
 

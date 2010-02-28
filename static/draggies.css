@@ -41,6 +41,11 @@ html, body {
    position: absolute;
    top: 0;
    left: 0;
+   text-align: center;
+}
+
+.dg-box .dg-letter {
+   font-size: 764%;
 }
 
 .dg-selected {
