@@ -43,3 +43,7 @@ html, body {
    left: 0;
 }
 
+.dg-selected {
+   background-color: orange;
+}
+

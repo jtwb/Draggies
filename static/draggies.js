@@ -77,14 +77,20 @@ $(function(){
        fayeclient = new Faye.Client('/fayeclient'),
        remote = new Remote(fayeclient, clientId),
        selected = null,
+       select = function(el) {
+          $(selected).removeClass('dg-selected');
+          selected = el == null ? null : $(el).addClass('dg-selected');
+       },
        boxHtml = '<div class="dg-box"></div>',
        newBox = function(id, pos) {
          return $(boxHtml).appendTo($('#dg-boxstart'))
             .draggable({
                containment: 'window',
+               distance: 30,
                grid: [51, 51],
                stop: function(event, ui){
                   if (ui.helper.hasClass('dg-dead')) return;
+                  select(ui.helper);
                   remote.fire('place', {
                      el: ui.helper.attr('id'), 
                      pos: ui.position,
@@ -97,8 +103,7 @@ $(function(){
             .click(function(e) {
                console.log('box click fired');
                console.log(e.target);
-               $(selected).removeClass('dg-selected');
-               selected = $(e.target).addClass('dg-selected');
+               select(e.target);
             });
       };
 
@@ -108,7 +113,8 @@ $(function(){
       helper: 'clone',
       stop: function(event, ui){
          var newId = 'dg-box-' + getNewId();
-         newBox(newId, ui.position);
+         var box = newBox(newId, ui.position);
+         select(box);
          remote.fire('place', {
             el: newId,
             pos: ui.position
@@ -129,7 +135,8 @@ $(function(){
       e.preventDefault();
       // deselect any selected items
       if (e.target == this) {
-         console.log('html.click triggered');
+         console.log('html.click deselect');
+         select(null);
       }
    });
 
