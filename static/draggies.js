@@ -76,6 +76,7 @@ $(function(){
    var clientId = getNewId(),
        fayeclient = new Faye.Client('/fayeclient'),
        remote = new Remote(fayeclient, clientId),
+       selected = null,
        boxHtml = '<div class="dg-box"></div>',
        newBox = function(id, pos) {
          return $(boxHtml).appendTo($('#dg-boxstart'))
@@ -92,7 +93,13 @@ $(function(){
             }).css({
                top: pos.top || pos.y || pos[1],
                left: pos.left || pos.x || pos[0]
-            }).attr('id', id);
+            }).attr('id', id)
+            .click(function(e) {
+               console.log('box click fired');
+               console.log(e.target);
+               $(selected).removeClass('dg-selected');
+               selected = $(e.target).addClass('dg-selected');
+            });
       };
 
    $(".dg-spawn").draggable({
