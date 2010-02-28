@@ -43,6 +43,7 @@ Remote.prototype = {
       this.publish(data);
    }
 };
+
 $(function(){
    var getNewId = function() {
          // TODO overwrite with a hashing algorithm?
@@ -61,7 +62,7 @@ $(function(){
             top: message.y
          });
       } else {
-          newBox({left: message.x, top: message.y}, message.el);
+          newBox(message.el, {left: message.x, top: message.y});
       }
       console.log(message.el);
    });
@@ -75,13 +76,13 @@ $(function(){
    var clientId = getNewId(),
        fayeclient = new Faye.Client('/fayeclient'),
        remote = new Remote(fayeclient, clientId),
-       newBox = function(pos, id) {
+       newBox = function(id, pos) {
          var boxHtml = '<div class="dg-box"></div>';
          return $(boxHtml).appendTo($('#dg-boxstart'))
             .draggable(dragOpts.box)
             .css({
-               top: pos.top || pos.y,
-               left: pos.left || pos.x
+               top: pos.top || pos.y || pos[1],
+               left: pos.left || pos.x || pos[0]
             }).attr('id', id);
       },
        dragOpts = {
@@ -102,7 +103,7 @@ $(function(){
             helper: 'clone',
             stop: function(event, ui){
                var newId = 'dg-box-' + getNewId();
-               newBox(ui.position, newId);
+               newBox(newId, ui.position);
                remote.fire('place', {
                   el: newId,
                   pos: ui.position
@@ -137,5 +138,13 @@ $(function(){
    $('document').keypress(function(e){
       console.log(e.which);
       e.which == $.keyCode.ESCAPE && console.log('ESC triggered');
+   });
+
+   $.getJSON('/sync', function(data) {
+      console.log('sync data recieved: ');
+      console.log(data);
+      $.each(data, function(id, pos) {
+         newBox(id, pos);
+      });
    });
 });

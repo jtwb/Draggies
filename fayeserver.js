@@ -1,6 +1,7 @@
 var sys = require('sys'),
     http = require('http'),
     fs = require('fs'),
+    json = require('./json'),
     faye = require('./faye');
 
 var comet = new faye.NodeAdapter({mount: '/fayeclient', timeout: 45}),
@@ -10,7 +11,7 @@ var comet = new faye.NodeAdapter({mount: '/fayeclient', timeout: 45}),
 var state = {};
 client.subscribe('/general', function(message) {
 // TODO discard malformed messages
-   message.client && message.type || return;
+   if (!message.client || !message.type) return;
    sys.puts('sync noticed message from client ' + message.client);
    sys.puts('message type == ' + message.type);
    switch (message.type) {
@@ -24,10 +25,9 @@ client.subscribe('/general', function(message) {
          delete state[message.el];
          break;
    }
+   sys.puts("state: ");
+   sys.puts(json.stringify(state));
 });
-//client.subscribe('/sync', function(message) {
-//   sys.puts('sync request recieved from client ' + message.client);
-//});
 
 var port = 8010;
 
@@ -43,7 +43,9 @@ http.createServer(function(req, resp) {
   var path = (req.url === '/') ? '/index.html' : req.url;
   if (path === '/sync') {
       sys.puts('** Handled by syncserver');
-      // TODO emit state as JSON
+      resp.sendHeader(200, {'Content-Type': 'text/html'});
+      resp.write(json.stringify(state));
+      resp.close();
       return;
   }
   sys.puts('** Handled by file server');
