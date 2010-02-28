@@ -76,45 +76,38 @@ $(function(){
    var clientId = getNewId(),
        fayeclient = new Faye.Client('/fayeclient'),
        remote = new Remote(fayeclient, clientId),
+       boxHtml = '<div class="dg-box"></div>',
        newBox = function(id, pos) {
-         var boxHtml = '<div class="dg-box"></div>';
          return $(boxHtml).appendTo($('#dg-boxstart'))
-            .draggable(dragOpts.box)
-            .css({
+            .draggable({
+               containment: 'window',
+               grid: [51, 51],
+               stop: function(event, ui){
+                  if (ui.helper.hasClass('dg-dead')) return;
+                  remote.fire('place', {
+                     el: ui.helper.attr('id'), 
+                     pos: ui.position,
+                  });
+               }
+            }).css({
                top: pos.top || pos.y || pos[1],
                left: pos.left || pos.x || pos[0]
             }).attr('id', id);
-      },
-       dragOpts = {
-         box: {
-            containment: 'window',
-            grid: [51, 51],
-            stop: function(event, ui){
-               if (ui.helper.hasClass('dg-dead')) return;
-               remote.fire('place', {
-                  el: ui.helper.attr('id'), 
-                  pos: ui.position,
-               });
-            }
-         },
-         spawn: {
-            containment: 'window',
-            grid: [51, 51],
-            helper: 'clone',
-            stop: function(event, ui){
-               var newId = 'dg-box-' + getNewId();
-               newBox(newId, ui.position);
-               remote.fire('place', {
-                  el: newId,
-                  pos: ui.position
-               });
-            }
-         }
-       };
+      };
 
-   $(".dg-spawn").draggable(dragOpts.spawn);
-
-   //$(".dg-box").draggable(dragOpts.box);
+   $(".dg-spawn").draggable({
+      containment: 'window',
+      grid: [51, 51],
+      helper: 'clone',
+      stop: function(event, ui){
+         var newId = 'dg-box-' + getNewId();
+         newBox(newId, ui.position);
+         remote.fire('place', {
+            el: newId,
+            pos: ui.position
+         });
+      }
+   });
 
    $(".dg-trash").droppable({
       drop: function(event, ui){
