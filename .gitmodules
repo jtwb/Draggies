@@ -1,0 +1,3 @@
+[submodule "lib/faye"]
+	path = lib/faye
+	url = git://github.com/jcoglan/faye.git

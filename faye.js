@@ -1,1 +1,1 @@
-/home/jason/src/git/ext/faye/build/faye.js
+./lib/faye/build/faye.js
