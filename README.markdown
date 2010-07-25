@@ -15,7 +15,7 @@ First you'll need [node.js](http://nodejs.org/) installed.  The current version 
 
 To checkout Draggies and its dependencies:
 
-    git checkout git://github.com/jtwb/Draggies.git
+    git clone git://github.com/jtwb/Draggies.git
     git submodule init
     git submodule update
 
