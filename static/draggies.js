@@ -91,7 +91,7 @@ $(function(){
                   if (ui.helper.hasClass('dg-dead')) return;
                   select(ui.helper);
                   remote.fire('place', {
-                     el: ui.helper.attr('id'), 
+                     el: ui.helper.attr('id'),
                      x: ui.position.left,
                      y: ui.position.top
                   });
